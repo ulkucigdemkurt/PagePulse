@@ -1,57 +1,128 @@
 import asyncio
 from playwright.async_api import async_playwright
 from bs4 import BeautifulSoup
+from colorama import Fore, Style, init
+from datetime import datetime
+
+# Colorama başlat
+init(autoreset=True)
+
+LOG_DOSYASI = "log.txt"
+
+def log_yaz(mesaj):
+    zaman = datetime.now().strftime("%H:%M:%S")
+
+    with open(LOG_DOSYASI, "a", encoding="utf-8") as dosya:
+        dosya.write(f"[{zaman}] {mesaj}\n")
 
 async def site_kontrol(url, aranacak_yazi, bekleme_suresi):
     async with async_playwright() as p:
         browser = await p.chromium.launch(headless=True)
+
         page = await browser.new_page()
 
         while True:
             try:
-                print(f"\n[{url}] kontrol ediliyor...")
+                print(Fore.CYAN + f"\n[{url}] kontrol ediliyor...")
+
+                log_yaz(f"{url} kontrol edildi")
+
                 await page.goto(url, timeout=60000)
+
                 html = await page.content()
+
                 soup = BeautifulSoup(html, "html.parser")
+
                 sayfa_metni = soup.get_text(separator=" ")
+
                 temiz_metin = sayfa_metni.lower()
 
                 if aranacak_yazi.lower() in temiz_metin:
-                    print("\nBULUNDU!")
-                    print(f"Aranan yazı bulundu: {aranacak_yazi}")
-                    # Bildirim sistemi gelecek
+
+                    print(Fore.GREEN + "\nBULUNDU!")
+
+                    print(
+                        Fore.GREEN +
+                        f"Aranan yazı bulundu: {aranacak_yazi}"
+                    )
+
+                    log_yaz(
+                        f"Aranan yazı bulundu: {aranacak_yazi}"
+                    )
+
                     break
+
                 else:
-                    print("Henüz bulunamadı.")
+                    print(Fore.YELLOW + "Henüz bulunamadı.")
+
+                    log_yaz("Henüz bulunamadı")
 
             except Exception as hata:
-                print("Hata oluştu:", hata)
 
-            print(f"{bekleme_suresi} saniye bekleniyor...")
+                print(Fore.RED + f"Hata oluştu: {hata}")
+
+                log_yaz(f"Hata oluştu: {hata}")
+
+            print(
+                Fore.MAGENTA +
+                f"{bekleme_suresi} saniye bekleniyor..."
+            )
+
             await asyncio.sleep(bekleme_suresi)
 
         await browser.close()
 
 if __name__ == "__main__":
-    print("--- PagePulse Başlatılıyor ---\n")
-    
+
+    print(
+        Fore.BLUE +
+        Style.BRIGHT +
+        "--- PagePulse Başlatılıyor ---\n"
+    )
+
     hedef_url = input("URL gir: ").strip()
+
     aranan = input("Aranacak yazı: ").strip()
-    
+
     while True:
         try:
-            sure_input = input("Kaç saniyede bir kontrol edilsin (örn: 30): ")
+            sure_input = input(
+                "Kaç saniyede bir kontrol edilsin (örn: 30): "
+            )
+
             sure = int(sure_input)
-            
+
             if sure < 5:
-                print("Çok kısa süre girdiniz. Engellenmemek için en az 5 saniye olarak ayarlanıyor.")
+                print(
+                    Fore.YELLOW +
+                    "Çok kısa süre girdiniz. "
+                    "En az 5 saniye ayarlanıyor."
+                )
+
                 sure = 5
-                
+
             break
+
         except ValueError:
-            print("Lütfen sadece rakam girin!")
+            print(
+                Fore.RED +
+                "Lütfen sadece rakam girin!"
+            )
 
     try:
-        asyncio.run(site_kontrol(hedef_url, aranan, sure))
+        asyncio.run(
+            site_kontrol(
+                hedef_url,
+                aranan,
+                sure
+            )
+        )
+
     except KeyboardInterrupt:
-        print("\nProgram kullanıcı tarafından durduruldu (CTRL+C).")
+
+        print(
+            Fore.RED +
+            "\nProgram kullanıcı tarafından durduruldu."
+        )
+
+        log_yaz("Program kullanıcı tarafından durduruldu")

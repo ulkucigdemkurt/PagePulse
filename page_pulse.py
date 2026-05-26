@@ -3,6 +3,7 @@ from playwright.async_api import async_playwright
 from bs4 import BeautifulSoup
 from colorama import Fore, Style, init
 from datetime import datetime
+from plyer import notification
 
 # Colorama başlat
 init(autoreset=True)
@@ -10,10 +11,18 @@ init(autoreset=True)
 LOG_DOSYASI = "log.txt"
 
 def log_yaz(mesaj):
+    
     zaman = datetime.now().strftime("%H:%M:%S")
 
     with open(LOG_DOSYASI, "a", encoding="utf-8") as dosya:
         dosya.write(f"[{zaman}] {mesaj}\n")
+
+def bildirim_gonder(baslik, mesaj):
+    notification.notify(
+        title=baslik,
+        message=mesaj,
+        timeout=10
+    )
 
 async def site_kontrol(url, aranacak_yazi, bekleme_suresi):
     async with async_playwright() as p:
@@ -46,6 +55,10 @@ async def site_kontrol(url, aranacak_yazi, bekleme_suresi):
                         f"Aranan yazı bulundu: {aranacak_yazi}"
                     )
 
+                    bildirim_gonder(
+                    "PagePulse Alert",
+                    f'"{aranacak_yazi}" bulundu!'
+)
                     log_yaz(
                         f"Aranan yazı bulundu: {aranacak_yazi}"
                     )
